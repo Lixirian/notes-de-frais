@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Le relais NAS est joint en HTTP simple sur le réseau local (http://192.168.x.x:8787) : Android
+  interdit le trafic en clair par défaut depuis l'API 28, on l'autorise donc explicitement.
+  Les appels directs aux API Anthropic / OpenAI restent en HTTPS. Pour un accès hors du Wi-Fi,
+  passer par le reverse proxy HTTPS de DSM (l'app accepte une URL https://).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,33 @@
+# Secrets : JAMAIS dans le dépôt (il est PUBLIC : c'est le canal de mise à jour des apps).
+.env
+tools/nas-relay/.env
+tools/nas-relay/site.env
+__pycache__/
+*.pyc
+keystore/
+# La clé de signature (keystore/release.jks + keystore.properties) reste sur ce poste
+# (SynologyDrive) : une mise à jour n'est acceptée par Android que si elle est signée avec
+# la même clé que l'app installée. La perdre = réinstallation obligatoire chez tous.
+
+# Gradle / build
+.gradle/
+build/
+local.properties
+.kotlin/
+*.log
+
+# IDE / outils locaux
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+.vscode/
+.claude/
+.remember/
+.superpowers/
+.cp-images/
+
+# NB : dist/notes-de-frais.apk (APK courant) et latest.json SONT suivis : ils forment,
+# avec les releases GitHub (APK versionné), le canal de distribution.

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aperçu — Mes notes de frais</title>
+<style>
+  :root {
+    --bg: #0f0f14; --panel: #1a1a22; --text: #e8e6f0; --muted: #9a98ab; --accent: #7c6cff; --border: #2a2a36;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 15px; margin: 0 12px 0 0; font-weight: 600; }
+  select, button { background: #24242f; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .group { display: flex; gap: 6px; align-items: center; padding-left: 10px; border-left: 1px solid var(--border); }
+  .muted { color: var(--muted); font-size: 12px; }
+  main { display: flex; justify-content: center; align-items: flex-start; padding: 28px 16px 60px; }
+  .device { position: relative; background: #050507; border-radius: var(--radius, 42px); padding: var(--bezel, 14px); box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 2px #2b2b33; transition: padding .2s, border-radius .2s; }
+  .device.tablet { --radius: 28px; --bezel: 22px; }
+  .device.foldable { --radius: 22px; --bezel: 12px; }
+  .screen { position: relative; display: block; background: #000; border-radius: calc(var(--radius) - var(--bezel)); overflow: hidden; user-select: none; -webkit-user-drag: none; touch-action: none; }
+  .screen img { display: block; width: 100%; height: 100%; pointer-events: none; }
+  .hinge { position: absolute; top: 0; bottom: 0; left: 50%; width: 6px; margin-left: -3px; background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.15), rgba(0,0,0,.55)); pointer-events: none; display: none; }
+  .device.foldable.unfolded .hinge { display: block; }
+  .status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); text-align: center; padding: 24px; }
+  .hint { max-width: 900px; margin: 0 auto; padding: 0 16px 24px; color: var(--muted); font-size: 12.5px; }
+  kbd { background: #24242f; border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📱 Aperçu Android</h1>
+  <select id="device"></select>
+  <button id="refresh" title="Rafraîchir la liste">↻</button>
+  <div class="group">
+    <span class="muted">Lancer :</span>
+    <select id="avd"></select>
+    <button id="start">Démarrer</button>
+    <button id="install" class="primary" title="Installe l'APK debug et lance l'app">Installer l'app</button>
+  </div>
+  <div class="group">
+    <button data-key="4" title="Retour">◀ Retour</button>
+    <button data-key="3" title="Accueil">● Accueil</button>
+    <button data-key="187" title="Applications récentes">■ Récents</button>
+  </div>
+  <div class="group">
+    <button id="rotate">⟳ Pivoter</button>
+    <button id="fold">⇔ Plier / déplier</button>
+    <label class="muted"><input type="checkbox" id="live" checked> Direct</label>
+    <span id="fps" class="muted"></span>
+  </div>
+</header>
+<main>
+  <div class="device" id="frame">
+    <div class="screen" id="screen">
+      <img id="img" alt="">
+      <div class="hinge"></div>
+      <div class="status" id="status">Sélectionnez un appareil ou démarrez un AVD.</div>
+    </div>
+  </div>
+</main>
+<p class="hint">
+  Clic = tap · cliquer-glisser = balayage · la saisie clavier est envoyée à l'appareil (<kbd>Entrée</kbd>, <kbd>Retour arrière</kbd>, <kbd>Échap</kbd> = Retour).
+  L'image est rafraîchie plusieurs fois par seconde via adb : c'est un aperçu fidèle du rendu, pas une vidéo fluide.
+  Sur l'AVD pliable, « Plier / déplier » bascule entre l'écran externe et le grand écran interne : l'app passe alors en deux volets.
+</p>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const deviceSel = $('#device'), avdSel = $('#avd'), img = $('#img'), status = $('#status');
+  const screen = $('#screen'), frame = $('#frame'), fpsEl = $('#fps');
+  let serial = null, size = { width: 0, height: 0 }, rotation = 0, folded = false, running = false, timer = null;
+  let lastFrames = [];
+
+  const api = (path, body) => fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ serial, ...body }) } : undefined).then(r => r.json());
+
+  async function loadDevices() {
+    const data = await fetch('/api/devices').then(r => r.json());
+    const current = serial;
+    deviceSel.innerHTML = '';
+    for (const d of data.devices) {
+      const o = document.createElement('option');
+      o.value = d.serial; o.textContent = `${d.name} (${d.serial}${d.state !== 'device' ? ', ' + d.state : ''})`;
+      o.disabled = d.state !== 'device';
+      deviceSel.appendChild(o);
+    }
+    avdSel.innerHTML = '';
+    for (const a of data.avds) { const o = document.createElement('option'); o.value = a; o.textContent = a; avdSel.appendChild(o); }
+    const ready = data.devices.filter(d => d.state === 'device');
+    if (current && ready.some(d => d.serial === current)) deviceSel.value = current;
+    else if (ready.length) { deviceSel.value = ready[0].serial; await selectDevice(ready[0].serial); }
+    else { serial = null; status.style.display = 'flex'; status.textContent = data.devices.length ? 'Appareil en cours de démarrage…' : 'Aucun appareil : démarrez un AVD.'; }
+  }
+
+  function applyFrameStyle() {
+    const name = (deviceSel.selectedOptions[0]?.textContent || '').toLowerCase();
+    frame.classList.toggle('tablet', name.includes('tablet') || name.includes('tablette'));
+    frame.classList.toggle('foldable', name.includes('fold') || name.includes('pliable'));
+    frame.classList.toggle('unfolded', size.width > size.height * 0.75);
+  }
+
+  async function selectDevice(s) {
+    serial = s;
+    try { size = await api(`/api/size?serial=${encodeURIComponent(serial)}`); } catch { size = { width: 1080, height: 2400 }; }
+    layout();
+    status.style.display = 'none';
+    if (!running) loop();
+  }
+
+  function layout() {
+    const maxH = window.innerHeight - 150, maxW = window.innerWidth - 80;
+    let w = size.width, h = size.height;
+    const scale = Math.min(maxH / h, maxW / w, 0.6);
+    screen.style.width = Math.round(w * scale) + 'px';
+    screen.style.height = Math.round(h * scale) + 'px';
+    applyFrameStyle();
+  }
+
+  async function loop() {
+    running = true;
+    while (serial) {
+      if (!$('#live').checked) { await new Promise(r => setTimeout(r, 300)); continue; }
+      const t0 = performance.now();
+      try {
+        const blob = await fetch(`/api/frame?serial=${encodeURIComponent(serial)}&t=${Date.now()}`).then(r => r.ok ? r.blob() : null);
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          await new Promise(res => { img.onload = () => { URL.revokeObjectURL(url); res(); }; img.onerror = res; img.src = url; });
+          if (img.naturalWidth && (img.naturalWidth !== size.width || img.naturalHeight !== size.height)) { size = { width: img.naturalWidth, height: img.naturalHeight }; layout(); }
+        }
+      } catch {}
+      const dt = performance.now() - t0;
+      lastFrames.push(dt); if (lastFrames.length > 10) lastFrames.shift();
+      fpsEl.textContent = (1000 / (lastFrames.reduce((a, b) => a + b, 0) / lastFrames.length)).toFixed(1) + ' img/s';
+    }
+    running = false;
+  }
+
+  const toDevice = (ev) => {
+    const r = screen.getBoundingClientRect();
+    return { x: Math.round((ev.clientX - r.left) / r.width * size.width), y: Math.round((ev.clientY - r.top) / r.height * size.height) };
+  };
+  let down = null;
+  screen.addEventListener('pointerdown', (ev) => { if (!serial) return; down = { ...toDevice(ev), t: Date.now() }; screen.setPointerCapture(ev.pointerId); });
+  screen.addEventListener('pointerup', (ev) => {
+    if (!serial || !down) return;
+    const up = toDevice(ev); const dist = Math.hypot(up.x - down.x, up.y - down.y);
+    if (dist < 12) api('/api/tap', { x: down.x, y: down.y });
+    else api('/api/swipe', { x1: down.x, y1: down.y, x2: up.x, y2: up.y, duration: Math.min(Math.max(Date.now() - down.t, 80), 800) });
+    down = null;
+  });
+  screen.addEventListener('wheel', (ev) => {
+    if (!serial) return; ev.preventDefault();
+    const p = toDevice(ev); const dy = Math.sign(ev.deltaY) * Math.round(size.height * 0.25);
+    api('/api/swipe', { x1: p.x, y1: p.y, x2: p.x, y2: p.y - dy, duration: 150 });
+  }, { passive: false });
+
+  window.addEventListener('keydown', (ev) => {
+    if (!serial || ev.target.tagName === 'SELECT' || ev.target.tagName === 'INPUT') return;
+    const keys = { Enter: 66, Backspace: 67, Escape: 4, ArrowUp: 19, ArrowDown: 20, ArrowLeft: 21, ArrowRight: 22, Tab: 61, Delete: 112 };
+    if (keys[ev.key]) { ev.preventDefault(); api('/api/key', { key: keys[ev.key] }); }
+    else if (ev.key.length === 1 && !ev.ctrlKey && !ev.metaKey) { ev.preventDefault(); api('/api/text', { text: ev.key }); }
+  });
+
+  document.querySelectorAll('button[data-key]').forEach(b => b.addEventListener('click', () => serial && api('/api/key', { key: Number(b.dataset.key) })));
+  $('#rotate').addEventListener('click', () => { if (!serial) return; rotation = (rotation + 1) % 4; api('/api/rotate', { rotation }); });
+  $('#fold').addEventListener('click', () => { if (!serial) return; folded = !folded; api('/api/fold', { folded }); });
+  $('#refresh').addEventListener('click', loadDevices);
+  $('#start').addEventListener('click', async () => { await api('/api/start', { avd: avdSel.value }); status.style.display = 'flex'; status.textContent = `Démarrage de ${avdSel.value}… (30 à 90 s)`; });
+  $('#install').addEventListener('click', async () => { if (!serial) return; const r = await api('/api/install', {}); if (r.error) alert(r.error); });
+  deviceSel.addEventListener('change', () => selectDevice(deviceSel.value));
+  window.addEventListener('resize', layout);
+
+  loadDevices();
+  setInterval(loadDevices, 8000);
+})();
+</script>
+</body>
+</html>

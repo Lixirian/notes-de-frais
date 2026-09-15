@@ -1,0 +1,52 @@
+# Relais « Mes notes de frais » — projet Container Manager `notes-de-frais`.
+# Tout ce qui dépend de VOTRE NAS (utilisateur, port publié, e-mail, URL publique) vient du fichier
+# `.env` posé à côté (jamais versionné) : voir .env.example et relayctl.sh.
+name: notes-de-frais
+
+services:
+  relay:
+    build:
+      context: .
+      args:
+        RELAY_UID: ${RELAY_UID:-1000}
+        RELAY_GID: ${RELAY_GID:-100}
+    image: notes-de-frais-relay:latest
+    container_name: notes-de-frais-relay
+    user: "${RELAY_UID:-1000}:${RELAY_GID:-100}"
+    environment:
+      HOME: /home/claude
+      # Modèle utilisé par Claude Code pour lire les tickets : `sonnet` (rapide, économe sur les
+      # limites de l'abonnement) ou `opus` (plus précis, plus lent).
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-sonnet}
+      # Auth par ABONNEMENT : token longue durée `claude setup-token`, lu depuis ./.env
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      CLAUDE_TOKEN_EXPIRES: ${CLAUDE_TOKEN_EXPIRES:-}
+      # Jeton que les apps présentent au relais (obtenu par appairage).
+      RELAY_TOKEN: ${RELAY_TOKEN:-}
+      RELAY_PORT: "8787"
+      # Appairage : e-mail d'alerte (facultatif) et URL publique pour les liens Autoriser / Refuser.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      PAIR_MAIL_TO: ${PAIR_MAIL_TO:-}
+      RELAY_PUBLIC_URL: ${RELAY_PUBLIC_URL:-}
+      # Repli sans abonnement (laisser vide sinon) :
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      # HOME persistant : état du CLI, images temporaires (work/), données synchronisées (data/)
+      - ./home:/home/claude
+    ports:
+      # Port LAN publié (les téléphones en Wi-Fi maison) ; depuis l'extérieur, passer par un
+      # reverse proxy HTTPS (ne pas ouvrir ce port sur la box).
+      - "${RELAY_PORT:-8787}:8787"
+    # `always` et non `unless-stopped` : une mise à jour de Container Manager arrête explicitement
+    # les conteneurs, ce qu'unless-stopped prend pour un arrêt volontaire.
+    restart: always
+    # Un abus (gros corps, rafale) ne doit pas emporter le NAS entier.
+    mem_limit: 1g
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]

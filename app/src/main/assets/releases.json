@@ -1,0 +1,29 @@
+{
+    "1.4.0": [
+        "Appairage sans aucune commande : sur un nouvel appareil, Réglages > Relais NAS > URL puis « Demander l'accès ». Le propriétaire voit la demande sur son téléphone déjà associé (bandeau d'accueil, puis Autoriser / Refuser) ; si l'e-mail est configuré sur le NAS, il reçoit aussi un message avec un lien Autoriser. Le jeton arrive tout seul.",
+        "Les options avancées (code d'appairage, saisie manuelle du jeton) restent disponibles derrière « Options avancées »."
+    ],
+    "1.3.0": [
+        "Relais NAS : appairage par code court. Sur le NAS, « relayctl.sh pair » affiche un code à 8 chiffres valable 10 minutes ; dans Réglages > Relais NAS, saisissez l'URL et ce code puis « Associer » : l'app récupère et enregistre le jeton toute seule. Plus besoin de recopier le jeton de 64 caractères (la saisie manuelle reste possible en avancé)."
+    ],
+    "1.2.0": [
+        "Sécurité (revue complète de l'app, du relais NAS et du dépôt GitHub) : les données reçues du NAS sont validées avant d'être stockées, les réponses réseau sont bornées, aucune redirection n'est suivie avec le jeton ou une clé.",
+        "Mise à jour : empreinte SHA-256 et taille désormais obligatoires dans le manifeste, APK accepté uniquement depuis les releases de ce dépôt, fichier re-vérifié juste avant l'installation.",
+        "Verrouillage : retour de l'appareil photo toléré 5 minutes au maximum, rien n'est affiché tant que l'état du verrou n'est pas connu, blocage progressif aussi lors du changement de code.",
+        "Photos : la capture brute de l'appareil photo est effacée après import (seule la version sans métadonnées est gardée) ; exports et captures du cache purgés à chaque démarrage."
+    ],
+    "1.1.2": [
+        "Mise à jour : l'APK téléchargé n'est plus effacé quand on revient du réglage « applications inconnues » (l'installation échouait avec « problème avec le fichier »), et le bouton passe bien à « Installer maintenant » au retour."
+    ],
+    "1.1.1": [
+        "Première version distribuée par la mise à jour automatique : si vous lisez ceci, le canal GitHub fonctionne.",
+        "Fins de ligne des scripts normalisées dans le dépôt (exécution sous Git Bash et sur le NAS)."
+    ],
+    "1.1.0": [
+        "Mise à jour automatique : l'app vérifie au lancement si une nouvelle version est publiée sur GitHub, l'annonce dans un bandeau avec ses nouveautés, la télécharge, vérifie son empreinte puis lance l'installation. Réglages > Mises à jour : vérification manuelle et activation.",
+        "Dialogue « Quoi de neuf » affiché après chaque mise à jour."
+    ],
+    "1.0.0": [
+        "Première version : lecture des tickets par IA (relais NAS ou clé API), détail de la TVA par taux, verrouillage par code et empreinte, stockage synchronisé sur le NAS, corbeille 30 jours, export ZIP (un dossier par ticket) et CSV."
+    ]
+}

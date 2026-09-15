@@ -1,0 +1,11 @@
+{
+    "version": "1.4.0",
+    "versionCode": 7,
+    "apk": "https://github.com/Lixirian/notes-de-frais/releases/download/v1.4.0/notes-de-frais-1.4.0.apk",
+    "sha256": "be9d5407dc2322530964b03de61e5706ceaf05a84fb947bd50e78e4a0960b3c6",
+    "size": 2992561,
+    "notes": [
+        "Appairage sans aucune commande : sur un nouvel appareil, Réglages > Relais NAS > URL puis « Demander l'accès ». Le propriétaire voit la demande sur son téléphone déjà associé (bandeau d'accueil, puis Autoriser / Refuser) ; si l'e-mail est configuré sur le NAS, il reçoit aussi un message avec un lien Autoriser. Le jeton arrive tout seul.",
+        "Les options avancées (code d'appairage, saisie manuelle du jeton) restent disponibles derrière « Options avancées »."
+    ]
+}

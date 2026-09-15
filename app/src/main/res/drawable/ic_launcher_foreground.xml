@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ticket de caisse stylisé avec bord dentelé et symbole euro, centré dans la zone sûre (66/108). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="30" android:translateY="24">
+        <!-- Corps du ticket -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M4,6 C4,3.8 5.8,2 8,2 L40,2 C42.2,2 44,3.8 44,6 L44,56 L38,52 L32,56 L26,52 L20,56 L14,52 L8,56 L4,52 Z" />
+        <!-- Lignes du ticket -->
+        <path
+            android:fillColor="#5B4CF5"
+            android:pathData="M11,12 L37,12 L37,15 L11,15 Z M11,19 L29,19 L29,22 L11,22 Z M11,26 L33,26 L33,29 L11,29 Z" />
+        <!-- Symbole euro -->
+        <path
+            android:fillColor="#5B4CF5"
+            android:pathData="M30.5,35 C27.2,35 24.5,37.3 23.6,40.5 L21,40.5 L21,42.5 L23.2,42.5 C23.2,42.8 23.2,43.2 23.2,43.5 C23.2,43.8 23.2,44.2 23.2,44.5 L21,44.5 L21,46.5 L23.6,46.5 C24.5,49.7 27.2,52 30.5,52 C32.4,52 34.1,51.3 35.4,50.1 L33.7,48.4 C32.8,49.2 31.7,49.6 30.5,49.6 C28.6,49.6 27,48.4 26.2,46.5 L32,46.5 L32,44.5 L25.7,44.5 C25.6,44.2 25.6,43.8 25.6,43.5 C25.6,43.2 25.6,42.8 25.7,42.5 L32,42.5 L32,40.5 L26.2,40.5 C27,38.6 28.6,37.4 30.5,37.4 C31.7,37.4 32.8,37.8 33.7,38.6 L35.4,36.9 C34.1,35.7 32.4,35 30.5,35 Z" />
+    </group>
+</vector>
